@@ -27,6 +27,8 @@ EntityBase{
     AppPaper {
         id: innerRect
         background.color: tileColor
+        background.border.color: Qt.darker(tileColor, 1.2)
+        background.border.width: 2
         anchors.centerIn: parent
         width: parent.width - 5
         height: width
