@@ -128,6 +128,8 @@ GameWindow {
                     scene.initializeTiles(logic.model)
                 } else if (logic.state === logic.uninitialized) {
                     scene.destroyTiles()
+                } else if (logic.state === logic.finished) {
+                    NativeDialog.confirm("Congratulations!", "You completed the puzzle in " + logic.time.toFixed(1) + " seconds." , undefined, false)
                 }
             }
         }
