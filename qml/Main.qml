@@ -1,6 +1,7 @@
 import Felgo 3.0
 import QtQuick 2.0
 
+
 GameWindow {
     id: gameWindow
 
@@ -22,6 +23,22 @@ GameWindow {
         entityContainer: gameBackground
     }
 
+    QtObject {
+        id: constants
+        property color backgroundColor: "#3c4564"
+        property color backgroundColorTop: backgroundColor
+        property color backgroundColorBottom: Qt.darker(backgroundColorTop, 1.5)
+
+        property real value: 0.9
+        property real saturation: 0.5
+
+        // Tile colors are interpolated using these 4 bases.
+        property color tileColor1: Qt.hsva(0.65, saturation, value, 1.0)
+        property color tileColor2: Qt.hsva(0.72, saturation, value, 1.0)
+        property color tileColor3: Qt.hsva(0.79, saturation, value, 1.0)
+        property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
+    }
+
     Logic {
         id: logic
     }
@@ -36,10 +53,10 @@ GameWindow {
         Rectangle {
             id: background
             anchors.fill: scene.gameWindowAnchorItem
-            color: "#B6581A"
-            border.width: 5
-            border.color: "#4A230B"
-            radius: 10 // radius of the corners
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: constants.backgroundColorTop }
+                GradientStop { position: 1.0; color: constants.backgroundColorBottom }
+            }
         }
 
         GameBackground {

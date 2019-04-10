@@ -18,3 +18,10 @@ function swap(array, i, j) {
     array[i] = array[j]
     array[j] = temp
 }
+
+function mixColors(c1, c2, alpha){
+    return Qt.rgba(c1.r * (1 - alpha) + c2.r * alpha,
+                   c1.g * (1 - alpha) + c2.g * alpha,
+                   c1.b * (1 - alpha) + c2.b * alpha,
+                   c1.a * (1 - alpha) + c2.a * alpha)
+}
