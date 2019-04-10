@@ -41,8 +41,8 @@ GameWindow {
 
         // Tile colors are interpolated using these 4 bases.
         property color tileColor1: Qt.hsva(0.65, saturation, value, 1.0)
-        property color tileColor2: Qt.hsva(0.72, saturation, value, 1.0)
-        property color tileColor3: Qt.hsva(0.79, saturation, value, 1.0)
+        property color tileColor2: Qt.hsva(0.73, saturation, value, 1.0)
+        property color tileColor3: Qt.hsva(0.73, saturation, value, 1.0)
         property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
 
         property real animationsDuration: 150
