@@ -14,22 +14,19 @@ EntityBase{
 
     property int xIndex: (tileValue - 1) % gridSizeGame
     property int yIndex: Math.floor((tileValue - 1) / gridSizeGame)
-    property alias tileColor: innerRect.color
 
     property color topColor: Utils.mixColors(constants.tileColor1, constants.tileColor2, xIndex / gridSizeGame)
     property color bottomColor: Utils.mixColors(constants.tileColor3, constants.tileColor4, xIndex / gridSizeGame)
+    property color tileColor: Utils.mixColors(topColor, bottomColor, yIndex)
 
-    tileColor: Utils.mixColors(topColor, bottomColor, yIndex)
-
-    width: gridWidth / gridSizeGame
-    height: width // square so height=width
-
-    // tileFontSize is deduced from the tile width, so it fits into any grid size
     property int tileFontSize: width / 3
 
-    // tile rectangle
-    Rectangle {
+    width: gridWidth / gridSizeGame
+    height: width
+
+    AppPaper {
         id: innerRect
+        background.color: tileColor
         anchors.centerIn: parent
         width: parent.width - 5
         height: width
@@ -42,27 +39,11 @@ EntityBase{
             font.pixelSize: tileFontSize
             text: tileValue
         }
-
-        RectangularGlow {
-            id: effect
-            anchors.fill: innerRect
-            glowRadius: 5
-            cached: true
-            spread: 0.2
-            color: "#77000000"
-            z: -1
-            cornerRadius: innerRect.radius + glowRadius
-        }
     }
 
     x: (width) * (tileIndex % gridSizeGame)
     y: (height) * Math.floor(tileIndex / gridSizeGame)
 
-    Behavior on x { NumberAnimation { duration: 200 } }
-    Behavior on y { NumberAnimation { duration: 200 } }
-
-    // destroy function
-    function destroyTile() {
-        removeEntity()
-    }
+    Behavior on x { NumberAnimation { duration: constants.animationsDuration } }
+    Behavior on y { NumberAnimation { duration: constants.animationsDuration } }
 }

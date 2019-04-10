@@ -19,6 +19,15 @@ function swap(array, i, j) {
     array[j] = temp
 }
 
+function isSorted(array, start, end) {
+    for (var i = start; i < end; i++) {
+        if (array[i] > array[i+1]) {
+            return false;
+        }
+    }
+    return true
+}
+
 function mixColors(c1, c2, alpha){
     return Qt.rgba(c1.r * (1 - alpha) + c2.r * alpha,
                    c1.g * (1 - alpha) + c2.g * alpha,

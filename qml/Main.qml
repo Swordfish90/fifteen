@@ -1,6 +1,7 @@
 import Felgo 3.0
 import QtQuick 2.0
 
+import QtQuick.Layouts 1.11
 
 GameWindow {
     id: gameWindow
@@ -20,14 +21,20 @@ GameWindow {
 
     EntityManager {
         id: entityManager
-        entityContainer: gameBackground
+        entityContainer: gameContent
     }
 
     QtObject {
         id: constants
+        property color foregroundColor: "#ffffff"
         property color backgroundColor: "#3c4564"
         property color backgroundColorTop: backgroundColor
         property color backgroundColorBottom: Qt.darker(backgroundColorTop, 1.5)
+
+        property color backgroundLight: "#697597"
+
+        property real defaultMargins: 5
+        property real defaultRadius: 5
 
         property real value: 0.9
         property real saturation: 0.5
@@ -37,6 +44,8 @@ GameWindow {
         property color tileColor2: Qt.hsva(0.72, saturation, value, 1.0)
         property color tileColor3: Qt.hsva(0.79, saturation, value, 1.0)
         property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
+
+        property real animationsDuration: 150
     }
 
     Logic {
@@ -57,25 +66,74 @@ GameWindow {
                 GradientStop { position: 0.0; color: constants.backgroundColorTop }
                 GradientStop { position: 1.0; color: constants.backgroundColorBottom }
             }
-        }
 
-        GameBackground {
-            id: gameBackground
-            anchors.centerIn: parent
-        }
+            RowLayout {
+                id: header
+                anchors { margins: constants.defaultMargins; left: parent.left; right: parent.right }
 
-        MouseArea {
-            anchors.fill: gameBackground
-            onClicked: {
-                var xValue = Math.floor(mouseX * gridSizeGame / width)
-                var yValue = Math.floor(mouseY * gridSizeGame / height)
-                logic.onCellClicked(xValue, yValue)
+                IconButton {
+                    color: constants.foregroundColor
+                    icon: IconType.clocko
+                }
+
+                AppText {
+                    color: constants.foregroundColor
+                    text: logic.time.toFixed(1)
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                IconButton {
+                    color: constants.foregroundColor
+                    icon: IconType.undo
+                    onClicked: logic.restart()
+                }
+            }
+
+            Item {
+                anchors {
+                    top: header.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+                Item {
+                    id: gameContent
+
+                    anchors.centerIn: parent
+
+                    width: gridWidth
+                    height: width
+                }
+
+                MouseArea {
+                    anchors.fill: gameContent
+                    onClicked: {
+                        var xValue = Math.floor(mouseX * gridSizeGame / width)
+                        var yValue = Math.floor(mouseY * gridSizeGame / height)
+                        logic.onCellClicked(xValue, yValue)
+                    }
+                }
             }
         }
 
         Connections {
             target: logic
             onModelUpdated: scene.updateTiles(model)
+            onStateChanged: {
+                if (logic.state === logic.ready) {
+                    scene.initializeTiles(logic.model)
+                } else if (logic.state === logic.uninitialized) {
+                    scene.destroyTiles()
+                }
+            }
+        }
+
+        function destroyTiles() {
+            entityManager.removeAllEntities()
         }
 
         function initializeTiles(model) {
@@ -98,8 +156,7 @@ GameWindow {
         }
 
         Component.onCompleted: {
-            logic.initializeModel()
-            initializeTiles(logic.model)
+            logic.restart()
         }
     }
 }
