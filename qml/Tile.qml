@@ -5,7 +5,6 @@ import QtGraphicalEffects 1.0
 import "utils.js" as Utils
 
 EntityBase{
-
     id: tile
     entityType: "tile"
 
@@ -24,28 +23,70 @@ EntityBase{
     width: gridWidth / gridSizeGame
     height: width
 
-    AppPaper {
-        id: innerRect
-        background.color: tileColor
-        background.border.color: Qt.darker(tileColor, 1.2)
-        background.border.width: 2
+    Item {
+        id: itemContainer
+        anchors.fill: parent
+
+        AppPaper {
+            id: innerRect
+            background.color: tileColor
+            background.border.color: Qt.darker(tileColor, 1.2)
+            background.border.width: 2
+            anchors.centerIn: parent
+            width: parent.width - 5
+            height: width
+            radius: 5
+
+            Text {
+                id: innerRectText
+                anchors.centerIn: parent
+                color: "#bbffffff"
+                font.bold: true
+                font.pixelSize: tileFontSize
+                text: tileValue
+            }
+        }
+    }
+
+    Rectangle {
+        id: highlightRectangle
+
+        color: "#22ffffff"
         anchors.centerIn: parent
         width: parent.width - 5
         height: width
         radius: 5
+        visible: (xAnim.running || yAnim.running) ? true : false
 
-        Text {
-            id: innerRectText
-            anchors.centerIn: parent
-            color: "white"
-            font.pixelSize: tileFontSize
-            text: tileValue
-        }
+        z: 1
+    }
+
+    // Let's add some motion blur when tiles are moving.
+    DirectionalBlur {
+        id: horizontalMotionBlur
+        anchors.fill: tile
+        source: itemContainer
+        cached: true
+        angle: 90
+        length: 5
+        samples: 3
+        visible: xAnim.running
+    }
+
+    DirectionalBlur {
+        id: verticalMotionBlur
+        anchors.fill: tile
+        source: itemContainer
+        angle: 0
+        cached: true
+        length: 5
+        samples: 3
+        visible: yAnim.running
     }
 
     x: (width) * (tileIndex % gridSizeGame)
     y: (height) * Math.floor(tileIndex / gridSizeGame)
 
-    Behavior on x { NumberAnimation { duration: constants.animationsDuration } }
-    Behavior on y { NumberAnimation { duration: constants.animationsDuration } }
+    Behavior on x { NumberAnimation { id: xAnim; duration: constants.animationsDuration; } }
+    Behavior on y { NumberAnimation { id: yAnim; duration: constants.animationsDuration; } }
 }

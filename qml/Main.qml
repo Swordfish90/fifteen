@@ -45,7 +45,7 @@ GameWindow {
         property color tileColor3: Qt.hsva(0.73, saturation, value, 1.0)
         property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
 
-        property real animationsDuration: 150
+        property real animationsDuration: 200
     }
 
     Logic {
@@ -78,6 +78,7 @@ GameWindow {
 
                 AppText {
                     color: constants.foregroundColor
+                    font.bold: true
                     text: logic.time.toFixed(1)
                 }
 
