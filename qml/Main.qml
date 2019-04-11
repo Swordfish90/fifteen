@@ -117,7 +117,7 @@ GameWindow {
 
         function initializeTiles(model) {
             for (var i = 0; i < model.length - 1; i++) {
-                var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), { tileIndex : i, tileValue: i + 1 })
+                var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), { tileIndex : i, tileValue: i })
                 tiles.push(entityManager.getEntityById(tileId))
             }
             updateTiles(logic.model)
