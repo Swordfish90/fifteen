@@ -11,16 +11,16 @@ EntityBase{
     property int tileIndex
     property int tileValue
 
-    property int xIndex: (tileValue - 1) % gridSizeGame
-    property int yIndex: Math.floor((tileValue - 1) / gridSizeGame)
+    property int xIndex: (tileValue - 1) % constants.gridSizeGame
+    property int yIndex: Math.floor((tileValue - 1) / constants.gridSizeGame)
 
-    property color topColor: Utils.mixColors(constants.tileColor1, constants.tileColor2, xIndex / gridSizeGame)
-    property color bottomColor: Utils.mixColors(constants.tileColor3, constants.tileColor4, xIndex / gridSizeGame)
+    property color topColor: Utils.mixColors(constants.tileColor1, constants.tileColor2, xIndex / constants.gridSizeGame)
+    property color bottomColor: Utils.mixColors(constants.tileColor3, constants.tileColor4, xIndex / constants.gridSizeGame)
     property color tileColor: Utils.mixColors(topColor, bottomColor, yIndex)
 
     property int tileFontSize: width / 3
 
-    width: gridWidth / gridSizeGame
+    width: constants.gridWidth / constants.gridSizeGame
     height: width
 
     Item {
@@ -84,9 +84,16 @@ EntityBase{
         visible: yAnim.running
     }
 
-    x: (width) * (tileIndex % gridSizeGame)
-    y: (height) * Math.floor(tileIndex / gridSizeGame)
+    x: (width) * (tileIndex % constants.gridSizeGame)
+    y: (height) * Math.floor(tileIndex / constants.gridSizeGame)
 
-    Behavior on x { NumberAnimation { id: xAnim; duration: constants.animationsDuration; } }
-    Behavior on y { NumberAnimation { id: yAnim; duration: constants.animationsDuration; } }
+    Behavior on x {
+        enabled: logic.state === logic.running
+        NumberAnimation { id: xAnim; duration: constants.animationsDuration; }
+    }
+
+    Behavior on y {
+        enabled: logic.state === logic.running
+        NumberAnimation { id: yAnim; duration: constants.animationsDuration; }
+    }
 }

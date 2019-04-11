@@ -6,13 +6,7 @@ import QtQuick.Layouts 1.11
 GameWindow {
     id: gameWindow
 
-    readonly property int empty: 0
-
-    property int gridWidth: 300 // width and height of the game grid
-    property int gridSizeGame: 4 // game grid size in tiles
-    property int gridSizeGameSquared: gridSizeGame * gridSizeGame
-
-    property var tiles: new Array()
+    property var tiles: []
 
     activeScene: scene
 
@@ -24,32 +18,13 @@ GameWindow {
         entityContainer: gameContent
     }
 
-    QtObject {
+    Constants {
         id: constants
-        property color foregroundColor: "#ffffff"
-        property color backgroundColor: "#3c4564"
-        property color backgroundColorTop: backgroundColor
-        property color backgroundColorBottom: Qt.darker(backgroundColorTop, 1.5)
-
-        property color backgroundLight: "#697597"
-
-        property real defaultMargins: 5
-        property real defaultRadius: 5
-
-        property real value: 0.9
-        property real saturation: 0.5
-
-        // Tile colors are interpolated using these 4 bases.
-        property color tileColor1: Qt.hsva(0.65, saturation, value, 1.0)
-        property color tileColor2: Qt.hsva(0.73, saturation, value, 1.0)
-        property color tileColor3: Qt.hsva(0.73, saturation, value, 1.0)
-        property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
-
-        property real animationsDuration: 200
     }
 
     Logic {
         id: logic
+        gridSizeGame: constants.gridSizeGame
     }
 
     Scene {
@@ -106,15 +81,15 @@ GameWindow {
 
                     anchors.centerIn: parent
 
-                    width: gridWidth
+                    width: constants.gridWidth
                     height: width
                 }
 
                 MouseArea {
                     anchors.fill: gameContent
                     onClicked: {
-                        var xValue = Math.floor(mouseX * gridSizeGame / width)
-                        var yValue = Math.floor(mouseY * gridSizeGame / height)
+                        var xValue = Math.floor(mouseX * constants.gridSizeGame / width)
+                        var yValue = Math.floor(mouseY * constants.gridSizeGame / height)
                         logic.onCellClicked(xValue, yValue)
                     }
                 }
@@ -137,24 +112,22 @@ GameWindow {
 
         function destroyTiles() {
             entityManager.removeAllEntities()
+            tiles = []
         }
 
         function initializeTiles(model) {
-            for (var i = 0; i < model.length; i++) {
-                if (model[i] !== empty) {
-                    var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), { tileIndex : i, tileValue: model[i] })
-                    tiles.push(entityManager.getEntityById(tileId))
-                }
+            for (var i = 0; i < model.length - 1; i++) {
+                var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), { tileIndex : i, tileValue: i + 1 })
+                tiles.push(entityManager.getEntityById(tileId))
             }
+            updateTiles(logic.model)
         }
 
         function updateTiles(model) {
             for (var i = 0; i < model.length; i++) {
-                for (var j = 0; j < tiles.length; j++) {
-                    if (model[i] === tiles[j].tileValue) {
-                        tiles[j].tileIndex = i
-                    }
-                }
+                var tileIndex = model[i] - 1
+                if (tileIndex >= 0)
+                    tiles[tileIndex].tileIndex = i
             }
         }
 

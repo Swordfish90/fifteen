@@ -12,6 +12,7 @@ QtObject {
     readonly property string running: "running"
     readonly property string finished: "finished"
 
+    property int gridSizeGame
     property string state: uninitialized
     property real time: 0
     property var model: new Array(gridSizeGameSquared)
@@ -34,8 +35,7 @@ QtObject {
 
     function initializeModel() {
         model = []
-        model.push(empty)
-        for (var i = 1; i < gridSizeGameSquared; i++) {
+        for (var i = 0; i < constants.gridSizeGameSquared; i++) {
             model.push(i)
         }
         Utils.shuffle(model)
@@ -60,7 +60,7 @@ QtObject {
     }
 
     function isEmpty(x, y) {
-        return model[coordsToIndex(x, y)] === empty
+        return model[coordsToIndex(x, y)] === 0
     }
 
     function coordsToIndex(x, y) {
