@@ -29,16 +29,23 @@ QtObject {
     function restart() {
         state = uninitialized
         time = 0
-        initializeModel()
+        initializeValidModel()
         state = ready
     }
 
-    function initializeModel() {
-        model = []
+    function initializeValidModel() {
+        do {
+            model = createRandomModel()
+        } while (!isSolvable(model) && !isFinished(model))
+    }
+
+    function createRandomModel() {
+        var model = []
         for (var i = 0; i < constants.gridSizeGameSquared; i++) {
             model.push(i)
         }
         Utils.shuffle(model)
+        return model
     }
 
     function onCellClicked(x, y) {
@@ -53,7 +60,7 @@ QtObject {
 
         if (moved) {
             modelUpdated(model)
-            if (isFinished()) {
+            if (isFinished(model)) {
                 state = finished
             }
         }
@@ -68,6 +75,9 @@ QtObject {
     }
 
     function move(x, y, dx, dy) {
+        if (state !== running && state !== ready)
+            return false
+
         if (!isInGame(x + dx, y + dy))
             return false
 
@@ -87,7 +97,42 @@ QtObject {
         return x >= 0 && x < gridSizeGame && y >= 0 && y < gridSizeGame
     }
 
-    function isFinished() {
+    function isFinished(model) {
         return Utils.isSorted(model, 0, model.length - 2) && model[model.length - 1] === 0
+    }
+
+    /* Not every fifteen puzzle can be solved. It needs to have an odd or even amount of inversions,
+     * depending on grid size and the empty tile position.
+     * More infos at: https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
+     */
+    function isSolvable(model) {
+        var inversions = countInversions(model)
+        var blankIndex = retrieveBlankIndex(model)
+        var emptyRow = gridSizeGame - Math.floor(blankIndex / gridSizeGame)
+
+        if (gridSizeGame % 2 === 0) {
+            return emptyRow % 2 === 0 ? inversions % 2 === 0 : inversions % 2 !== 0
+        } else {
+            return inversions % 2 === 0
+        }
+    }
+
+    function retrieveBlankIndex(model) {
+        for (var i = 0; i < model.length; i++) {
+            if (model[i] === 0) {
+                return i
+            }
+        }
+    }
+
+    function countInversions(model) {
+        var result = 0
+        for (var i = 0; i < model.length; i++) {
+            for (var j = i + 1; j < model.length; j++) {
+                if (model[i] !== 0 && model[j] !== 0 && model[j] > model[i])
+                    result++
+            }
+        }
+        return result
     }
 }
