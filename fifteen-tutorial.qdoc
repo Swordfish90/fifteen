@@ -1,0 +1,141 @@
+/*!
+  \page fifteen-puzzle-tutorial.html
+  \title Tutorial: Creating a cool looking Fifteen puzzle game
+
+  This tutorials describes how to create a fifteen sliding puzzle with a great UI/UX!
+
+  \section1 Setup the project
+
+  Let's start by creating a new felgo empty project with New File or Project -> Felgo Games -> New Empty Felgo 3 Project.
+
+  We should delete anything inside scene, we are not going to need that. Main.qml should look something like this:
+
+  \qml
+    GameWindow {
+        id: gameWindow
+
+        activeScene: scene
+        screenWidth: 960
+        screenHeight: 640
+
+        Scene {
+            id: scene
+            width: 480
+            height: 320
+        }
+    }
+  \endqml
+
+  To tidy things up a bit let's create a Constants.qml file which will grow with our application. This can be a QtObject since it won't have any UI.
+
+  \qml
+  import Felgo 3.0
+  import QtQuick 2.0
+
+  QtObject {
+      // Total board size.
+      property int gridWidth: 300
+
+      // The number of tiles along each axis.
+      property int gridSizeGame: 4
+
+      property color foregroundColor: "#ffffff"
+      property color backgroundColor: "#3c4564"
+      property color tileColor: "#737ee6"
+  }
+  \endqml
+
+  We should add it to our project root, and we'll use it as a singleton object.
+
+  \qml
+  import Felgo 3.0
+  import QtQuick 2.0
+
+  GameWindow {
+      id: gameWindow
+
+      ...
+
+      Constants { id: constants }
+
+      ...
+  }
+  \endqml
+
+  To model things we represent our 4x4 matrix as a single array of 16 elements where each value represent the tile at that position, with zero as the empty tile. We'll start with a fake model.
+
+  \qml
+  Scene {
+      property var model: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]
+
+      id: scene
+
+      Rectangle {
+          anchors.fill: parent
+          color: constants.backgroundColor
+      }
+
+      ...
+  }
+  \endqml
+
+  While we were there we also added a nice background.
+
+  Create a new file Tile.qml which is unexpectedly going to represent a tile. Right now we don't need anything fancy, just a tile with some text on top will be more than enough.
+  It will have two undefined properties tileIndex which represents the current position on the board, and tileValue, the number written on it (which is also the desired position).
+
+  \qml
+  import QtQuick 2.2
+  import Felgo 3.0
+
+  EntityBase {
+      id: tile
+      entityType: "tile"
+
+      property int tileIndex
+      property int tileValue
+
+      // This are the two formulas to retrieve the two matrix components from the single array.
+      property int currentX: tileIndex % constants.gridSizeGame
+      property int currentY: Math.floor(tileIndex / constants.gridSizeGame)
+
+      property color tileColor: constants.tileColor
+
+      property real tileMargins: 2.5
+      property int tileFontSize: width / 3
+
+      width: constants.gridWidth / constants.gridSizeGame
+      height: width
+
+      x: width * currentX
+      y: height * currentY
+
+      Item {
+          id: itemContainer
+          anchors.fill: parent
+
+          AppPaper {
+              id: innerRect
+              background.color: tileColor
+              anchors { fill: parent; margins: tileMargins }
+              radius: 5
+          }
+
+          Text {
+              id: innerRectText
+              anchors.centerIn: innerRect
+              color: constants.foregroundColor
+              font.pixelSize: tileFontSize
+              font.bold: true
+
+              // The number we print is just the desired position + 1
+              text: tileValue + 1
+          }
+      }
+  }
+  \endqml
+
+  Great! We are already seeing something.
+
+  \section1 Writing the game logic
+*/
