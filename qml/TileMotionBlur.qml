@@ -4,11 +4,12 @@ import QtGraphicalEffects 1.0
 Item {
     property alias horizontalBlur: horizontalBlurEffect.visible
     property alias verticalBlur: verticalBlurEffect.visible
+    property var source
 
     DirectionalBlur {
         id: horizontalBlurEffect
         anchors.fill: parent
-        source: itemContainer
+        source: parent.source
         cached: true
         angle: 90
         length: 5
@@ -19,7 +20,7 @@ Item {
     DirectionalBlur {
         id: verticalBlurEffect
         anchors.fill: parent
-        source: itemContainer
+        source: parent.source
         angle: 0
         cached: true
         length: 5

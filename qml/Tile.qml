@@ -3,7 +3,7 @@ import Felgo 3.0
 
 import "utils.js" as Utils
 
-EntityBase{
+EntityBase {
     id: tile
     entityType: "tile"
 
@@ -19,6 +19,7 @@ EntityBase{
     property color topColor: Utils.mixColors(constants.tileColor1, constants.tileColor2, goalX / constants.gridSizeGame)
     property color bottomColor: Utils.mixColors(constants.tileColor3, constants.tileColor4, goalX / constants.gridSizeGame)
     property color tileColor: Utils.mixColors(topColor, bottomColor, goalY)
+    property color darkTileColor: Qt.darker(tileColor, 1.2)
 
     property real tileMargins: 2.5
     property int tileFontSize: width / 3
@@ -35,8 +36,8 @@ EntityBase{
 
         AppPaper {
             id: innerRect
-            background.color: tileColor
-            background.border.color: Qt.darker(tileColor, 1.2)
+            background.color: tileIndex === tileValue ? tileColor : darkTileColor
+            background.border.color: darkTileColor
             background.border.width: 2
             anchors { fill: parent; margins: tileMargins }
             radius: constants.defaultRadius
@@ -49,6 +50,7 @@ EntityBase{
             font.bold: true
             font.pixelSize: tileFontSize
             text: tileValue + 1
+            z: 2
         }
     }
 
@@ -65,6 +67,7 @@ EntityBase{
         anchors.fill: tile
         horizontalBlur: xAnim.running
         verticalBlur: yAnim.running
+        source: itemContainer
     }
 
     Behavior on x {
