@@ -1,5 +1,5 @@
 sourcedirs = .
-outputdir  = ./doc/html
+outputdir  = ./html
 outputformats = HTML
 imagedirs = ./images
 

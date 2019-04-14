@@ -1,6 +1,6 @@
 /*!
   \page fifteen-puzzle-tutorial.html
-  \title Tutorial: Creating a cool looking Fifteen puzzle game
+  \title Tutorial: Cool looking fifteen puzzle game
 
   In this tutorial we are going to create a fifteen sliding puzzle game with a great UI/UX using Felgo!
 
@@ -139,12 +139,22 @@
 
   \qml
     Scene {
+        property var tiles: []
 
         ...
 
         EntityManager {
             id: entityManager
             entityContainer: gameContent
+        }
+
+        Item {
+            id: gameContent
+
+            anchors.centerIn: parent
+
+            width: constants.gridWidth
+            height: width
         }
 
         function initializeTiles(model) {
@@ -340,7 +350,7 @@
               onModelUpdated: scene.updateTiles(model)
               onStateChanged: {
                   if (logic.state === logic.ready) {
-                      scene.initializeTiles(model)
+                      scene.initializeTiles(logic.model)
                   }
               }
           }
@@ -511,6 +521,7 @@
       property color topColor: mixColors(constants.tileColor1, constants.tileColor2, goalX / constants.gridSizeGame)
       property color bottomColor: mixColors(constants.tileColor3, constants.tileColor4, goalX / constants.gridSizeGame)
       property color tileColor: mixColors(topColor, bottomColor, goalY)
+      property color darkTileColor: Qt.darker(tileColor, 1.2)
 
       // Perform linear interpolation between two colors with a given alpha
       function mixColors(c1, c2, alpha){
