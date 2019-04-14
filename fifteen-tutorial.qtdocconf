@@ -1,6 +1,7 @@
 sourcedirs = .
 outputdir  = ./doc/html
 outputformats = HTML
+imagedirs = ./images
 
 sources.fileextensions = "*.cpp *.qdoc *.mm *.qml"
 headers.fileextensions = "*.h *.ch *.h++ *.hh *.hpp *.hxx"

@@ -2,13 +2,13 @@
   \page fifteen-puzzle-tutorial.html
   \title Tutorial: Creating a cool looking Fifteen puzzle game
 
-  This tutorials describes how to create a fifteen sliding puzzle with a great UI/UX!
+  In this tutorial we are going to create a fifteen sliding puzzle game with a great UI/UX using Felgo!
 
   \section1 Setup the project
 
-  Let's start by creating a new felgo empty project with New File or Project -> Felgo Games -> New Empty Felgo 3 Project.
+  Let's start by creating a new Felgo empty project with New File or Project -> Felgo Games -> New Empty Felgo 3 Project.
 
-  We should delete anything inside scene, we are not going to need that. Main.qml should look something like this:
+  We should delete anything inside the scene, Main.qml should look like this:
 
   \qml
     GameWindow {
@@ -26,7 +26,7 @@
     }
   \endqml
 
-  To tidy things up a bit let's create a Constants.qml file which will grow with our application. This can be a QtObject since it won't have any UI.
+  Let's try to follow some good design guidelines and create a Constants.qml file which will grow with our application. We can use a QtObject since it won't have any UI.
 
   \qml
   import Felgo 3.0
@@ -34,18 +34,18 @@
 
   QtObject {
       // Total board size.
-      property int gridWidth: 300
+      readonly property int gridWidth: 300
 
       // The number of tiles along each axis.
-      property int gridSizeGame: 4
+      readonly property int gridSizeGame: 4
 
-      property color foregroundColor: "#ffffff"
-      property color backgroundColor: "#3c4564"
-      property color tileColor: "#737ee6"
+      readonly property color foregroundColor: "#ffffff"
+      readonly property color backgroundColor: "#3c4564"
+      readonly property color tileColor: "#737ee6"
   }
   \endqml
 
-  We should add it to our project root, and we'll use it as a singleton object.
+  We should add it to our gameWindow, and we'll use it as a singleton object.
 
   \qml
   import Felgo 3.0
@@ -62,7 +62,7 @@
   }
   \endqml
 
-  To model things we represent our 4x4 matrix as a single array of 16 elements where each value represent the tile at that position, with zero as the empty tile. We'll start with a fake model.
+  We are going to represent our 4x4 matrix as an array of 16 elements. Each value represents the number at that position, with zero as the empty tile. Let's start with a fake model:
 
   \qml
   Scene {
@@ -79,10 +79,10 @@
   }
   \endqml
 
-  While we were there we also added a nice background.
+  I took the liberty of adding a nice background color in the meantime.
 
-  Create a new file Tile.qml which is unexpectedly going to represent a tile. Right now we don't need anything fancy, just a tile with some text on top will be more than enough.
-  It will have two undefined properties tileIndex which represents the current position on the board, and tileValue, the number written on it (which is also the desired position).
+  Now, let's create a new file Tile.qml which is (unexpectedly) going to represent a tile. Right now we don't need anything fancy, just a square with some text on top will be more than enough.
+  It will have two properties tileIndex which contains the current position on the board, and tileValue, the number written on it (which is also the target position).
 
   \qml
   import QtQuick 2.2
@@ -95,7 +95,7 @@
       property int tileIndex
       property int tileValue
 
-      // This are the two formulas to retrieve the two matrix components from the single array.
+      // This are the two formulas to retrieve the two axis components from the single index.
       property int currentX: tileIndex % constants.gridSizeGame
       property int currentY: Math.floor(tileIndex / constants.gridSizeGame)
 
@@ -128,14 +128,619 @@
               font.pixelSize: tileFontSize
               font.bold: true
 
-              // The number we print is just the desired position + 1
+              // The number on the tile is just the target position + 1
               text: tileValue + 1
           }
       }
   }
   \endqml
 
-  Great! We are already seeing something.
+  To draw these on screen we are going to create an EntityManager which add the tile nodes, and an updateTiles function which synchronizes the UI with the current model state.
+
+  \qml
+    Scene {
+
+        ...
+
+        EntityManager {
+            id: entityManager
+            entityContainer: gameContent
+        }
+
+        function initializeTiles(model) {
+            for (var i = 0; i < model.length - 1; i++) {
+                var tileId = entityManager.createEntityFromUrlWithProperties(Qt.resolvedUrl("Tile.qml"), { tileIndex : i, tileValue: i })
+                tiles.push(entityManager.getEntityById(tileId))
+            }
+            updateTiles(model)
+        }
+
+        function updateTiles(model) {
+            for (var i = 0; i < model.length; i++) {
+                var tileIndex = model[i] - 1
+                if (tileIndex >= 0)
+                    tiles[tileIndex].tileIndex = i
+            }
+        }
+
+        Component.onCompleted: {
+            initializeTiles(model)
+        }
+    }
+  \endqml
+
+  Great! We can already see something.
+
+  \image fifteen-screen1.jpg "Screenshot 1"
 
   \section1 Writing the game logic
+
+  It's always useful to keep logic and UI separated, so let's put it in a Logic.qml file.
+  This object will take care of game state, puzzle generation and moves.
+
+  There will be 4 game states:
+
+  \list
+        \li Uninitialized: the game just loaded, nothing has happened yet
+        \li Ready: the puzzle has been generated but the user hasn't yet interacted with it
+        \li Running: the user has moved the first tile, the timer is running
+        \li Finished: the puzzle is completed
+  \endlist
+
+  Let's add the timer and the code to manage everything:
+
+  \qml
+  import QtQuick 2.0
+
+  QtObject {
+      id: logic
+
+      signal modelUpdated(var model)
+
+      readonly property string uninitialized: "uninitialized"
+      readonly property string ready: "ready"
+      readonly property string running: "running"
+      readonly property string finished: "finished"
+
+      property int gridSizeGame
+      property int gridSizeGameSquared: gridSizeGame * gridSizeGame
+      property string state: uninitialized
+      property real time: 0
+      property var model: new Array(gridSizeGameSquared)
+
+      property Timer timer: Timer {
+          running: logic.state === logic.running
+          interval: 100 // Timer ticks every 100 ms
+          repeat: true
+          onTriggered: time += 0.1
+      }
+
+      function restart() {
+          state = uninitialized
+          time = 0
+          initializeValidModel()
+          state = ready
+      }
+  }
+  \endqml
+
+  Generating a puzzle is probably the hardest part in this section. We can't just shuffle the array because not every tiles permutation has a valid solution.
+
+  Diving deep into literature we see that we need to make sure that the number of inversions in the array is odd if the empty cell is on an even row when counting from the bottom, or even if the empty cell is on and odd row. Let's try to put this into code:
+
+  \qml
+  QtObject {
+      id: logic
+
+      ...
+
+      // Here we keep generating puzzles until we find one that satisfy
+      // two conditions: it is solvable, it is not already solved (we might be very unlucky :) ).
+      function initializeValidModel() {
+          do {
+              model = createRandomModel()
+          } while (!isSolvable(model) && !isFinished(model))
+      }
+
+      function createRandomModel() {
+          var model = []
+          for (var i = 0; i < gridSizeGameSquared; i++) {
+              model.push(i)
+          }
+          shuffle(model)
+          return model
+      }
+
+      // Not every fifteen puzzle can be solved. It needs to have an odd or even amount of inversions,
+      // depending on grid size and the empty tile position.
+      // More infos at: https://www.cs.bham.ac.uk/~mdr/teaching/modules04/java2/TilesSolvability.html
+      function isSolvable(model) {
+          var inversions = countInversions(model)
+          var blankIndex = retrieveBlankIndex(model)
+
+          // Empty tile row is counted from bottom
+          var emptyRow = gridSizeGame - Math.floor(blankIndex / gridSizeGame)
+
+          if (gridSizeGame % 2 === 0) {
+              return emptyRow % 2 === 0 ? inversions % 2 === 0 : inversions % 2 !== 0
+          } else {
+              return inversions % 2 === 0
+          }
+      }
+
+      function retrieveBlankIndex(model) {
+          for (var i = 0; i < model.length; i++) {
+              if (model[i] === 0) {
+                  return i
+              }
+          }
+      }
+
+      function countInversions(model) {
+          var result = 0
+          for (var i = 0; i < model.length; i++) {
+              for (var j = i + 1; j < model.length; j++) {
+                  if (model[i] !== 0 && model[j] !== 0 && model[j] > model[i])
+                      result++
+              }
+          }
+          return result
+      }
+
+      function isFinished(model) {
+          return isSorted(model, 0, model.length - 2) && model[model.length - 1] === 0
+      }
+
+      function isSorted(array, start, end) {
+          for (var i = start; i < end; i++) {
+              if (array[i] > array[i+1]) {
+                  return false;
+              }
+          }
+          return true
+      }
+
+      function shuffle(a) {
+          var j, x, i;
+          for (i = a.length - 1; i > 0; i--) {
+              j = Math.floor(Math.random() * (i + 1));
+              x = a[i];
+              a[i] = a[j];
+              a[j] = x;
+          }
+          return a;
+      }
+  }
+
+  \endqml
+
+  Now it's time to the UI and actually see these newly generated puzzles. Let's add:
+
+  \qml
+  import Felgo 3.0
+  import QtQuick 2.0
+
+  GameWindow {
+      id: gameWindow
+
+      ...
+
+      Logic {
+          id: logic
+          gridSizeGame: constants.gridSizeGame
+      }
+
+      Scene {
+          id: scene
+
+          ...
+
+          Connections {
+              target: logic
+              onModelUpdated: scene.updateTiles(model)
+              onStateChanged: {
+                  if (logic.state === logic.ready) {
+                      scene.initializeTiles(model)
+                  }
+              }
+          }
+
+          Component.onCompleted: {
+              logic.restart()
+          }
+      }
+  }
+
+  \endqml
+
+  We should have a new solvable puzzle every time the game is launched. We can give ourselves a pat on the back, but it's not time to rest, we still need to handle moves and we'll start by detecting taps on tiles:
+
+  \qml
+  GameWindow {
+      id: gameWindow
+
+      ...
+
+      Scene {
+          id: scene
+
+          ...
+
+
+          MouseArea {
+              anchors.fill: gameContent
+              onClicked: {
+                  var xValue = Math.floor(mouseX * constants.gridSizeGame / width)
+                  var yValue = Math.floor(mouseY * constants.gridSizeGame / height)
+                  logic.onCellClicked(xValue, yValue)
+              }
+          }
+      }
+  }
+  \endqml
+
+  When the user taps on a tile we want it to move to the neighbour empty position. If the empty cell is not an immediate neighbour, we want also move every tile in between. This is achievable with a recursive function that tries to push the tile in every direction (by design only one might succeed).
+
+  \qml
+  QtObject {
+      id: logic
+
+      ...
+
+      function onCellClicked(x, y) {
+          if (state === ready)
+              state = running
+
+          var moved = false
+          moved |= move(x, y, 1, 0)
+          moved |= move(x, y, -1, 0)
+          moved |= move(x, y, 0, 1)
+          moved |= move(x, y, 0, -1)
+
+          if (moved) {
+              // After a successful move we need to notify a change in the model
+              modelUpdated(model)
+              if (isFinished(model)) {
+                  state = finished
+              }
+          }
+      }
+
+      function isEmpty(x, y) {
+          return model[coordsToIndex(x, y)] === 0
+      }
+
+      function coordsToIndex(x, y) {
+          return x + y * gridSizeGame
+      }
+
+      function move(x, y, dx, dy) {
+          if (state !== running && state !== ready)
+              return false
+
+          if (!isInGame(x + dx, y + dy))
+              return false
+
+          // Move is performed if the direct neighbour is empty or if the recursive call returns true
+          // (which means the neighbour tile has an empty neighbour).
+          if (isEmpty(x + dx, y + dy) || move(x + dx, y + dy, dx, dy)) {
+              performMoveSwap(x, y, x + dx, y + dy)
+              return true
+          }
+      }
+
+      function performMoveSwap(x1, y1, x2, y2) {
+          var fromIndex = coordsToIndex(x1, y1)
+          var toIndex = coordsToIndex(x2, y2)
+          swap(model, fromIndex, toIndex)
+      }
+
+      function swap(array, i, j) {
+          var temp = array[i]
+          array[i] = array[j]
+          array[j] = temp
+      }
+
+      function isInGame(x, y) {
+          return x >= 0 && x < gridSizeGame && y >= 0 && y < gridSizeGame
+      }
+  }
+  \endqml
+
+  Behold! It moves!
+
+  \image fifteen-screen2.jpg "Screenshot 2"
+
+  \section1 The eye-candy
+
+  Once you are done playing with your newest creation, it time for polish and eye-candy.
+  We can't bear to see tiles jumping from the start to end end position so abruptly, we should make the transition smoother. Let's add Behaviors in Tile.qml:
+
+  \qml
+  EntityBase {
+      id: tile
+
+      ...
+
+      Behavior on x {
+          enabled: logic.state === logic.running
+          NumberAnimation { id: xAnim; duration: 150; }
+      }
+
+      Behavior on y {
+          enabled: logic.state === logic.running
+          NumberAnimation { id: yAnim; duration: 150; }
+      }
+  }
+  \endqml
+
+  We also want better colors. What about generating them programmatically and making them into a gradient? This way the user will also have the subconscious satisfaction of arranging colors while playing. Let's define four basic tile colors in Constants.qml, one for each corner:
+
+  \qml
+  QtObject {
+      id: constants
+
+      ...
+
+      // Colors are generated progammatically with same saturation and value (in HSV)
+      // but slightly different hue.
+      readonly property real value: 0.9
+      readonly property real saturation: 0.5
+
+
+      // Tile colors are interpolated using these 4 bases.
+      property color tileColor1: Qt.hsva(0.65, saturation, value, 1.0)
+      property color tileColor2: Qt.hsva(0.73, saturation, value, 1.0)
+      property color tileColor3: Qt.hsva(0.73, saturation, value, 1.0)
+      property color tileColor4: Qt.hsva(0.85, saturation, value, 1.0)
+  }
+  \endqml
+
+  Now in Tile.qml we linearly interpolate between these colors:
+
+  \qml
+  EntityBase {
+      id: tile
+
+      ...
+
+      // This represents the desired, final position of this tile
+      property int goalX: tileValue % constants.gridSizeGame
+      property int goalY: Math.floor(tileValue / constants.gridSizeGame)
+
+      property color topColor: mixColors(constants.tileColor1, constants.tileColor2, goalX / constants.gridSizeGame)
+      property color bottomColor: mixColors(constants.tileColor3, constants.tileColor4, goalX / constants.gridSizeGame)
+      property color tileColor: mixColors(topColor, bottomColor, goalY)
+
+      // Perform linear interpolation between two colors with a given alpha
+      function mixColors(c1, c2, alpha){
+          return Qt.rgba(c1.r * (1 - alpha) + c2.r * alpha,
+                       c1.g * (1 - alpha) + c2.g * alpha,
+                       c1.b * (1 - alpha) + c2.b * alpha,
+                       c1.a * (1 - alpha) + c2.a * alpha)
+      }
+  }
+  \endqml
+
+  We should also "reward" positive behaviour by highlighting tiles in the correct position, and by providing feedback when the tiles move.
+
+  \qml
+  EntityBase {
+      id: tile
+
+      ...
+
+      Item {
+          id: itemContainer
+
+          ...
+
+          AppPaper {
+              id: innerRect
+
+              // We change tile color when it's in the right position
+              background.color: tileIndex === tileValue ? tileColor : darkTileColor
+              background.border.color: darkTileColor
+              background.border.width: 2
+
+              ...
+
+          }
+      }
+
+      // We display a white highlight when the tile is moving
+      Rectangle {
+          id: highlightRectangle
+          color: "#22ffffff"
+          anchors { fill: parent; margins: tileMargins }
+          radius: 5
+          visible: xAnim.running || yAnim.running
+          z: 1
+      }
+
+      ...
+
+  }
+  \endqml
+
+  For the last eye-candy feature we are going to add some motion blur to make the animation even smoother. We are going to take advantage of the QtGraphicalEffects module and use a DirectionalBlur effect. This shader is simply going to created a blurred version of the original tile along one axis, creating the ghosting effect we want during the animation.
+
+This might be costly on performance, so we create two cached versions of it (vertical and horizontal) displaying them when the tile is moving along the proper axis. Let's create a new file TileMotionBlur.qml.
+
+  \qml
+  import QtQuick 2.0
+  import QtGraphicalEffects 1.0
+
+  Item {
+      property alias horizontalBlur: horizontalBlurEffect.visible
+      property alias verticalBlur: verticalBlurEffect.visible
+      property var source
+
+      DirectionalBlur {
+          id: horizontalBlurEffect
+          anchors.fill: parent
+          source: parent.source
+          cached: true
+          angle: 90
+          length: 5
+          samples: 3
+          visible: false
+      }
+
+      DirectionalBlur {
+          id: verticalBlurEffect
+          anchors.fill: parent
+          source: parent.source
+          angle: 0
+          cached: true
+          length: 5
+          samples: 3
+          visible: false
+      }
+  }
+  \endqml
+
+  And let's add it do Tile.qml:
+
+  \qml
+  EntityBase {
+      id: tile
+
+      ...
+
+
+      TileMotionBlur {
+          anchors.fill: tile
+          horizontalBlur: xAnim.running
+          verticalBlur: yAnim.running
+          source: itemContainer
+      }
+  }
+  \endqml
+
+  You should see a subtle effect when moving tiles.
+
+  \image fifteen-screen3.jpg "Screenshot 3"
+
+  \section1 The finishing touches
+
+
+  We are still missing a three of features: a proper management of the finished state, a clock and a restart button.
+  That's why we need a header in our scene:
+
+  \qml
+  import Felgo 3.0
+  import QtQuick 2.0
+
+  import QtQuick.Layouts 1.11
+
+  GameWindow {
+      id: gameWindow
+
+      ...
+
+      Scene {
+          id: scene
+
+          ...
+
+          Rectangle {
+              id: background
+              anchors.fill: scene.gameWindowAnchorItem
+              color: constants.backgroundColor
+
+              RowLayout {
+                  id: header
+                  anchors { margins: 5; left: parent.left; right: parent.right }
+
+                  IconButton {
+                      color: constants.foregroundColor
+                      icon: IconType.clocko
+                  }
+
+                  AppText {
+                      color: constants.foregroundColor
+                      font.bold: true
+                      text: logic.time.toFixed(1)
+                  }
+
+                  Item {
+                      Layout.fillWidth: true
+                  }
+
+                  IconButton {
+                      color: constants.foregroundColor
+                      icon: IconType.undo
+                      onClicked: logic.restart()
+                  }
+              }
+
+              Item {
+                  anchors {
+                      top: header.bottom
+                      left: parent.left
+                      right: parent.right
+                      bottom: parent.bottom
+                  }
+
+                  Item {
+                      id: gameContent
+
+                      ...
+
+                  }
+
+                  MouseArea { ... }
+              }
+          }
+
+          ...
+
+      }
+  }
+  \endqml
+
+  We should also reduce grid size to 250 instead of 300 to make it fit the screen.
+
+  Now we want to display a congratulations message when the user completes its puzzle and clean the board when the restart button is pressed.
+
+  Let's modify Main.qml:
+
+  \qml
+  GameWindow {
+      id: gameWindow
+
+      ...
+
+      Scene {
+          id: scene
+
+          ...
+
+          Connections {
+              target: logic
+              onModelUpdated: scene.updateTiles(model)
+              onStateChanged: {
+                  if (logic.state === logic.ready) {
+                      scene.initializeTiles(logic.model)
+                  } else if (logic.state === logic.uninitialized) {
+                      scene.destroyTiles()
+                  } else if (logic.state === logic.finished) {
+                      NativeDialog.confirm("Congratulations!", "You completed the puzzle in " + logic.time.toFixed(1) + " seconds." , undefined, false)
+                  }
+              }
+          }
+
+          function destroyTiles() {
+              entityManager.removeAllEntities()
+              tiles = []
+          }
+
+      }
+  }
+  \endqml
+
+  Well... That was fast!... The game is ready, it's time to actually play it and do the happy dance!
+
+  \image fifteen-screen4.jpg "Screenshot 4"
 */
