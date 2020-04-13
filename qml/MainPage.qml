@@ -89,7 +89,7 @@ Page {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
+                    onPressed: {
                         var xPosition = position % logic.gridSizeGame
                         var yPosition = Math.floor(position / logic.gridSizeGame)
                         logic.onCellClicked(xPosition, yPosition)

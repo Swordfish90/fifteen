@@ -37,12 +37,12 @@ App {
     }
 
     onInitTheme: {
+        Theme.colors.statusBarStyle = Theme.colors.statusBarStyleSystem
         Theme.colors.backgroundColor = constants.backgroundColorDarker
         Theme.navigationBar.backgroundColor = constants.backgroundColor
         Theme.navigationBar.titleColor = constants.foregroundColor
         Theme.navigationBar.dividerColor = "transparent"
         Theme.listItem.dividerColor = constants.backgroundColorDarker
-
     }
 
     NavigationStack {

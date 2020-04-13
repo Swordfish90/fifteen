@@ -17,11 +17,12 @@ Item {
     property int goalX: tileValue % gridSizeGame
     property int goalY: Math.floor(tileValue / gridSizeGame)
 
+    property bool isPositionCorrect: tileIndex === tileValue
+
     property color topColor: Utils.mixColors(colorManager.tileColor1, colorManager.tileColor2, goalX / gridSizeGame)
     property color bottomColor: Utils.mixColors(colorManager.tileColor3, colorManager.tileColor4, goalX / gridSizeGame)
     property color tileColor: Utils.mixColors(topColor, bottomColor, goalY)
-    property color darkTileColor: Qt.darker(tileColor, 1.1)
-    property color lightTileColor: Qt.lighter(tileColor, 1.1)
+    property color inactiveTileColor: Qt.darker(tileColor, 1.75)
 
     property real tileMargins: constants.defaultMargins / 2
     property int tileFontSize: width / 3
@@ -30,9 +31,11 @@ Item {
     x: width * currentX
     y: height * currentY
 
+    Drag.active: true
+
     AppPaper {
         id: innerRect
-        background.color: tileIndex === tileValue ? tileColor : "white"
+        background.color: tileIndex === tileValue ? tileColor : inactiveTileColor
         anchors { fill: parent; margins: tileMargins }
         elevated: false
         shadowSizeDefault: dp(2)
@@ -51,11 +54,13 @@ Item {
         Text {
             id: innerRectText
             anchors.centerIn: innerRect
-            color: "#aa000000"
+            color: isPositionCorrect ? "#aa000000" : "#aaffffff"
             font.bold: true
             font.pixelSize: tileFontSize
             text: tileValue + 1
             z: 2
+
+            Behavior on color { ColorAnimation { duration: constants.animationsDuration } }
         }
     }
 

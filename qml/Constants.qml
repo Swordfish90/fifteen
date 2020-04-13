@@ -4,14 +4,14 @@ QtObject {
     property color foregroundColor: "black"
     property color foregroundColorTransparent: "#22000000"
     property color backgroundColor: "white"
-    property color backgroundColorDarker: "#dadada"
+    property color backgroundColorDarker: "#eee"
 
     property real cellMaxSize: dp(96)
 
-    property real defaultMargins: dp(7)
-    property real defaultRadius: dp(7)
+    property real defaultMargins: dp(8)
+    property real defaultRadius: dp(8)
 
     property string leaderboardBaseName: "fifteen_leaderboard_"
 
-    property real animationsDuration: 125
+    property real animationsDuration: 150
 }
