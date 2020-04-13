@@ -13,9 +13,12 @@ QtObject {
     readonly property string finished: "finished"
 
     property int gridSizeGame
+    property int gridSizeGameSquared: gridSizeGame * gridSizeGame
     property string state: uninitialized
     property real time: 0
-    property var model: new Array(gridSizeGameSquared)
+    property var model: []
+
+    onGridSizeGameChanged: restart()
 
     property Timer timer: Timer {
         running: logic.state === logic.running
@@ -24,7 +27,10 @@ QtObject {
         onTriggered: time += 0.1
     }
 
-    onStateChanged: console.log("Game state changed", state)
+    function restartWithSize(size) {
+        gridSizeGame = size
+        restart()
+    }
 
     function restart() {
         state = uninitialized
@@ -41,7 +47,7 @@ QtObject {
 
     function createRandomModel() {
         var model = []
-        for (var i = 0; i < constants.gridSizeGameSquared; i++) {
+        for (var i = 0; i < gridSizeGameSquared; i++) {
             model.push(i)
         }
         Utils.shuffle(model)
