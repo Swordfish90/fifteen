@@ -66,33 +66,38 @@ Page {
         }
     }
 
-    Item {
-        id: mainContainer
-        anchors.centerIn: parent
-        width: cellSize * logic.gridSizeGame
-        height: cellSize * logic.gridSizeGame
+    Loader {
+        anchors.fill: parent
+        asynchronous: true
 
-        property real hCellSize: (parent.width - 2 * constants.defaultMargins) / logic.gridSizeGame
-        property real vCellSize: (parent.height - 2 * constants.defaultMargins) / logic.gridSizeGame
-
-        property int cellSize: Math.min(hCellSize, vCellSize, constants.cellMaxSize)
-
-        Repeater {
-            id: repeater
-            model: listModel
+        Item {
+            id: mainContainer
             anchors.centerIn: parent
-            delegate: Tile {
-                width: mainContainer.cellSize
-                height: width
-                tileIndex: position
-                tileValue: value
+            width: cellSize * logic.gridSizeGame
+            height: cellSize * logic.gridSizeGame
 
-                MouseArea {
-                    anchors.fill: parent
-                    onPressed: {
-                        var xPosition = position % logic.gridSizeGame
-                        var yPosition = Math.floor(position / logic.gridSizeGame)
-                        logic.onCellClicked(xPosition, yPosition)
+            property real hCellSize: (parent.width - 2 * constants.defaultMargins) / logic.gridSizeGame
+            property real vCellSize: (parent.height - 2 * constants.defaultMargins) / logic.gridSizeGame
+
+            property int cellSize: Math.min(hCellSize, vCellSize, constants.cellMaxSize)
+
+            Repeater {
+                id: repeater
+                model: listModel
+                anchors.centerIn: parent
+                delegate: Tile {
+                    width: mainContainer.cellSize
+                    height: width
+                    tileIndex: position
+                    tileValue: value
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onPressed: {
+                            var xPosition = position % logic.gridSizeGame
+                            var yPosition = Math.floor(position / logic.gridSizeGame)
+                            logic.onCellClicked(xPosition, yPosition)
+                        }
                     }
                 }
             }
