@@ -10,7 +10,7 @@ App {
 
     FelgoGameNetwork {
         id: gameNetwork
-        gameId: 625
+        gameId: 918
         secret: "hNbBRe0my88s14gDMc0BEkG7p42dR0bjiNBHjJInkUQdVQQgfqBINLrLOiZh"
     }
 

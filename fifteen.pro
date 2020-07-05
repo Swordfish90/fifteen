@@ -6,7 +6,7 @@ CONFIG += felgo
 #CONFIG += felgo-live
 
 # configure the identifier and version information
-PRODUCT_IDENTIFIER = com.swordfish.games.Fifteen
+PRODUCT_IDENTIFIER = com.swordfish.fifteen
 PRODUCT_VERSION_NAME = 1.0.0
 PRODUCT_VERSION_CODE = 1
 
